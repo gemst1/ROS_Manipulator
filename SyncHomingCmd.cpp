@@ -52,7 +52,7 @@ int g_PulseRev[] = {4096, 4096, 4096, 4096, 2048, 2048, 2048};
 int g_HomeOffset_arr[] = {72818, 72818, 72818, 54613, 22378, 22378, 22378};
 
 // Position Control Parameters
-long g_PosDesired[] = {0, 0, 0, 0, 0, 0, 0};
+long g_PosDesired;
 unsigned int g_ProfileVelocity;
 long g_PosCenter[] = {0, 0, 0, 0, 0, 0, 0};
 long g_PosPositiveLimit[] = {0, 0, 0, 0, 0, 0, 0};
@@ -319,361 +319,361 @@ int ParseArguments(int argc, char** argv)
     return lResult;
 }
 
-int HomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned int & p_rlErrorCode)
-{
-    int lResult = MMC_SUCCESS;
-    stringstream msg;
+//int HomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned int & p_rlErrorCode)
+//{
+//    int lResult = MMC_SUCCESS;
+//    stringstream msg;
+//
+//    g_HomingAcceleration = 1000;
+//    g_SpeedSwitch = 200;
+//    g_SpeedIndex = 10;
+//    g_HomeOffset = 24576;
+//
+//    msg << "set Homing mode, node = " << p_usNodeId;
+//    LogInfo(msg.str());
+//
+//    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+//    {
+//        LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//        lResult = MMC_FAILED;
+//    }
+//    else
+//    {
+//        if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, g_HomeOffset, g_CurrentThreshold,
+//                                  g_HomePosition, &p_rlErrorCode) == 0)
+//        {
+//            LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
+//            lResult = MMC_FAILED;
+//        }
+//        else
+//        {
+//            if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
+//                                      &g_HomePosition, &p_rlErrorCode) == 0)
+//            {
+//                LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
+//                lResult = MMC_FAILED;
+//            }
+//            else
+//            {
+//                stringstream msg;
+//                msg << "Homing Parameters, node = " << p_usNodeId << endl;
+//                msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
+//                msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
+//                msg << "SpeedIndex          = " << g_SpeedIndex << endl;
+//                msg << "HomeOffset          = " << g_HomeOffset << endl;
+//                msg << "CurrentThreshold    = " << g_interfaceName << endl;
+//                msg << "HomePosition        = " << g_HomePosition;
+//                LogInfo(msg.str());
+//                SeparatorLine();
+//                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
+//                {
+//                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
+//                    lResult = MMC_FAILED;
+//                }
+//                else
+//                {
+//                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_NEGATIVE_LIMIT_SWITCH_AND_INDEX, &p_rlErrorCode) == 0)
+//                    {
+//                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
+//                        lResult = MMC_FAILED;
+//                    }
+//                    else
+//                    {
+//                        stringstream msg;
+//                        LogInfo("Finding Home....");
+//                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
+//                        msg << "Home position is set, node = " << p_usNodeId;
+//                        LogInfo(msg.str());
+//                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+//                        {
+//                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//                            lResult = MMC_FAILED;
+//                        }
+//                        else
+//                        {
+//                            if(VCS_GetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &data, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+//                            {
+//                                LogError("VCS_GetObject", lResult, p_rlErrorCode);
+//                                lResult = MMC_FAILED;
+//                            }
+//                            else
+//                            {
+//                                if(int(data) == 28)
+//                                {
+//                                    LogInfo("Homing is complete, DigitalIO 4 is set as QuickStop");
+//                                    SeparatorLine();
+//                                }
+//                                else
+//                                {
+//                                    LogInfo("Homing is not complete, DigitalIO 4 is NOT set as QuickStop");
+//                                    SeparatorLine();
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                }
+//            }
+//        }
+//    }
+//
+//    return lResult;
+//}
 
-    g_HomingAcceleration = 1000;
-    g_SpeedSwitch = 200;
-    g_SpeedIndex = 10;
-    g_HomeOffset = 24576;
-
-    msg << "set Homing mode, node = " << p_usNodeId;
-    LogInfo(msg.str());
-
-    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
-    {
-        LogError("VCS_SetObject", lResult, p_rlErrorCode);
-        lResult = MMC_FAILED;
-    }
-    else
-    {
-        if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, g_HomeOffset, g_CurrentThreshold,
-                                  g_HomePosition, &p_rlErrorCode) == 0)
-        {
-            LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
-            lResult = MMC_FAILED;
-        }
-        else
-        {
-            if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
-                                      &g_HomePosition, &p_rlErrorCode) == 0)
-            {
-                LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
-                lResult = MMC_FAILED;
-            }
-            else
-            {
-                stringstream msg;
-                msg << "Homing Parameters, node = " << p_usNodeId << endl;
-                msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
-                msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
-                msg << "SpeedIndex          = " << g_SpeedIndex << endl;
-                msg << "HomeOffset          = " << g_HomeOffset << endl;
-                msg << "CurrentThreshold    = " << g_interfaceName << endl;
-                msg << "HomePosition        = " << g_HomePosition;
-                LogInfo(msg.str());
-                SeparatorLine();
-                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
-                {
-                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
-                    lResult = MMC_FAILED;
-                }
-                else
-                {
-                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_NEGATIVE_LIMIT_SWITCH_AND_INDEX, &p_rlErrorCode) == 0)
-                    {
-                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
-                        lResult = MMC_FAILED;
-                    }
-                    else
-                    {
-                        stringstream msg;
-                        LogInfo("Finding Home....");
-                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
-                        msg << "Home position is set, node = " << p_usNodeId;
-                        LogInfo(msg.str());
-                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
-                        {
-                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
-                            lResult = MMC_FAILED;
-                        }
-                        else
-                        {
-                            if(VCS_GetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &data, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
-                            {
-                                LogError("VCS_GetObject", lResult, p_rlErrorCode);
-                                lResult = MMC_FAILED;
-                            }
-                            else
-                            {
-                                if(int(data) == 28)
-                                {
-                                    LogInfo("Homing is complete, DigitalIO 4 is set as QuickStop");
-                                    SeparatorLine();
-                                }
-                                else
-                                {
-                                    LogInfo("Homing is not complete, DigitalIO 4 is NOT set as QuickStop");
-                                    SeparatorLine();
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
-        }
-    }
-
-    return lResult;
-}
-
-int BothHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned int & p_rlErrorCode)
-{
-    int lResult = MMC_SUCCESS;
-    stringstream msg;
-
-    g_HomingAcceleration = 1000;
-    g_SpeedSwitch = 200;
-    g_SpeedIndex = 10;
-    g_HomeOffset = 24576;
-
-    LogInfo("set Synchronized Homing mode");
-
-    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
-       VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
-    {
-
-        lResult = MMC_FAILED;
-        LogError("VCS_SetObject", lResult, p_rlErrorCode);
-    }
-    else
-    {
-        if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, g_HomeOffset, g_CurrentThreshold,
-                                  g_HomePosition, &p_rlErrorCode) == 0)
-        {
-            lResult = MMC_FAILED;
-            LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
-        }
-        else
-        {
-            if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
-                                      &g_HomePosition, &p_rlErrorCode) == 0)
-            {
-                lResult = MMC_FAILED;
-                LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
-            }
-            else
-            {
-                stringstream msg;
-                msg << "Homing Parameters, node = " << p_usNodeId << endl;
-                msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
-                msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
-                msg << "SpeedIndex          = " << g_SpeedIndex << endl;
-                msg << "HomeOffset          = " << g_HomeOffset << endl;
-                msg << "CurrentThreshold    = " << g_interfaceName << endl;
-                msg << "HomePosition        = " << g_HomePosition;
-                LogInfo(msg.str());
-                SeparatorLine();
-                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
-                {
-                    lResult = MMC_FAILED;
-                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
-                }
-                else
-                {
-                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_NEGATIVE_LIMIT_SWITCH_AND_INDEX, &p_rlErrorCode) == 0)
-                    {
-                        lResult = MMC_FAILED;
-                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
-                    }
-                    else
-                    {
-                        stringstream msg;
-                        LogInfo("Finding Home....");
-                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
-                        msg << "Home position is set, node = " << p_usNodeId;
-                        LogInfo(msg.str());
-
-                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
-                           && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
-                        {
-                            lResult = MMC_FAILED;
-                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
-                        }
-                        else
-                        {
-                            if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
-                            {
-                                lResult = MMC_FAILED;
-                                LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
-                            }
-                            else
-                            {
-                                if(VCS_MoveWithVelocity(p_DeviceHandle, p_usNodeId, g_SpeedSwitch, &p_rlErrorCode) == 0)
-                                {
-                                    lResult = MMC_FAILED;
-                                    LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
-                                }
-                                else
-                                {
-                                    LogInfo("Finding Positive Limit Switch...");
-                                    do
-                                    {
-                                        if(VCS_GetQuickStopState(p_DeviceHandle, p_usNodeId, &g_IsQuickStopped, &p_rlErrorCode) == 0)
-                                        {
-                                            lResult = MMC_FAILED;
-                                            LogError("VCS_GetQuickStopState", lResult, p_rlErrorCode);
-                                        }
-                                    }
-                                    while (g_IsQuickStopped == 0);
-                                    LogInfo("Found Positive Limit Switch!");
-                                    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
-                                       && VCS_SetObject(p_DeviceHandle, p_usNodeId, 0x3141, 0x02, &g_LowActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)== 0)
-                                    {
-                                        lResult = MMC_FAILED;
-                                        LogError("VCS_SetObject", lResult, p_rlErrorCode);
-                                    }
-                                    else
-                                    {
-                                        if(VCS_MoveWithVelocity(p_DeviceHandle, p_usNodeId, -g_SpeedIndex, &p_rlErrorCode) == 0)
-                                        {
-                                            lResult = MMC_FAILED;
-                                            LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
-                                        }
-                                        else
-                                        {
-                                            LogInfo("Finding Positive Home...");
-                                            do
-                                            {
-                                                if(VCS_GetQuickStopState(p_DeviceHandle, p_usNodeId, &g_IsQuickStopped, &p_rlErrorCode) == 0)
-                                                {
-                                                    lResult = MMC_FAILED;
-                                                    LogError("VCS_GetQuickStopState", lResult, p_rlErrorCode);
-                                                }
-                                                else
-                                                {
-                                                    if(VCS_GetPositionIs(p_DeviceHandle, p_usNodeId, &g_CapturedPosition, &p_rlErrorCode) == 0)
-                                                    {
-                                                        lResult = MMC_FAILED;
-                                                        LogError("VCS_GetPositionIs", lResult, p_rlErrorCode);
-                                                    }
-                                                }
-                                            }
-                                            while (g_IsQuickStopped == 0);
-                                            stringstream msg;
-
-                                            g_PosPositiveLimit = (long)(g_CapturedPosition - g_HomeOffset);
-                                            g_PosCenter = (long)(g_PosPositiveLimit/2);
-
-                                            msg << "Found Positive Limit    : " << g_PosPositiveLimit << endl;
-                                            msg << "Found Center Position   : " << g_PosCenter;
-                                            LogInfo(msg.str());
-
-                                            if(VCS_SetObject(p_DeviceHandle, p_usNodeId, 0x3141, 0x02, &g_HighActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)
-                                               && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
-                                            {
-                                                lResult = MMC_FAILED;
-                                                LogError("VCS_SetObject", lResult, p_rlErrorCode);
-                                            }
-                                            else
-                                            {
-                                                if(VCS_ActivateProfilePositionMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
-                                                {
-                                                    lResult = MMC_FAILED;
-                                                    LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
-                                                }
-                                                else
-                                                {
-                                                    if(VCS_MoveToPosition(p_DeviceHandle, p_usNodeId, g_PosCenter, 1, 1, &p_rlErrorCode) == 0)
-                                                    {
-                                                        lResult = MMC_FAILED;
-                                                        LogError("VCS_MoveToPosition", lResult, p_rlErrorCode);
-                                                    }
-                                                    else
-                                                    {
-                                                        VCS_WaitForTargetReached(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
-                                                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
-                                                           && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
-                                                        {
-                                                            lResult = MMC_FAILED;
-                                                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
-                                                        }
-                                                        else
-                                                        {
-                                                            if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, 0, g_CurrentThreshold,
-                                                                                      g_HomePosition, &p_rlErrorCode) == 0)
-                                                            {
-                                                                lResult = MMC_FAILED;
-                                                                LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
-                                                            }
-                                                            else
-                                                            {
-                                                                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
-                                                                {
-                                                                    lResult = MMC_FAILED;
-                                                                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
-                                                                }
-                                                                else
-                                                                {
-                                                                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_ACTUAL_POSITION, &p_rlErrorCode) == 0)
-                                                                    {
-                                                                        lResult = MMC_FAILED;
-                                                                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 15000, &p_rlErrorCode);
-                                                                        if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
-                                                                                                  &g_HomePosition, &p_rlErrorCode) == 0)
-                                                                        {
-                                                                            lResult = MMC_FAILED;
-                                                                            LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            stringstream msg;
-                                                                            msg << "Homing Parameters, node = " << p_usNodeId << endl;
-                                                                            msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
-                                                                            msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
-                                                                            msg << "SpeedIndex          = " << g_SpeedIndex << endl;
-                                                                            msg << "HomeOffset          = " << g_HomeOffset << endl;
-                                                                            msg << "CurrentThreshold    = " << g_interfaceName << endl;
-                                                                            msg << "HomePosition        = " << g_HomePosition;
-                                                                            LogInfo(msg.str());
-                                                                            SeparatorLine();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if(VCS_GetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &data, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
-                        {
-                            lResult = MMC_FAILED;
-                            LogError("VCS_GetObject", lResult, p_rlErrorCode);
-                        }
-                        else
-                        {
-                            if(int(data) == 28)
-                            {
-                                LogInfo("Homing is complete, DigitalIO 4 is set as QuickStop");
-                                SeparatorLine();
-                            }
-                            else
-                            {
-                                LogInfo("Homing is not complete, DigitalIO 4 is NOT set as QuickStop");
-                                SeparatorLine();
-                            }
-                        }
-                    }
-                }
-
-            }
-        }
-    }
-
-    return lResult;
-}
+//int BothHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned int & p_rlErrorCode)
+//{
+//    int lResult = MMC_SUCCESS;
+//    stringstream msg;
+//
+//    g_HomingAcceleration = 1000;
+//    g_SpeedSwitch = 200;
+//    g_SpeedIndex = 10;
+//    g_HomeOffset = 24576;
+//
+//    LogInfo("set Synchronized Homing mode");
+//
+//    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
+//       VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+//    {
+//
+//        lResult = MMC_FAILED;
+//        LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//    }
+//    else
+//    {
+//        if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, g_HomeOffset, g_CurrentThreshold,
+//                                  g_HomePosition, &p_rlErrorCode) == 0)
+//        {
+//            lResult = MMC_FAILED;
+//            LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
+//        }
+//        else
+//        {
+//            if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
+//                                      &g_HomePosition, &p_rlErrorCode) == 0)
+//            {
+//                lResult = MMC_FAILED;
+//                LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
+//            }
+//            else
+//            {
+//                stringstream msg;
+//                msg << "Homing Parameters, node = " << p_usNodeId << endl;
+//                msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
+//                msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
+//                msg << "SpeedIndex          = " << g_SpeedIndex << endl;
+//                msg << "HomeOffset          = " << g_HomeOffset << endl;
+//                msg << "CurrentThreshold    = " << g_interfaceName << endl;
+//                msg << "HomePosition        = " << g_HomePosition;
+//                LogInfo(msg.str());
+//                SeparatorLine();
+//                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
+//                {
+//                    lResult = MMC_FAILED;
+//                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
+//                }
+//                else
+//                {
+//                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_NEGATIVE_LIMIT_SWITCH_AND_INDEX, &p_rlErrorCode) == 0)
+//                    {
+//                        lResult = MMC_FAILED;
+//                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
+//                    }
+//                    else
+//                    {
+//                        stringstream msg;
+//                        LogInfo("Finding Home....");
+//                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
+//                        msg << "Home position is set, node = " << p_usNodeId;
+//                        LogInfo(msg.str());
+//
+//                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
+//                           && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
+//                        {
+//                            lResult = MMC_FAILED;
+//                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//                        }
+//                        else
+//                        {
+//                            if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
+//                            {
+//                                lResult = MMC_FAILED;
+//                                LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
+//                            }
+//                            else
+//                            {
+//                                if(VCS_MoveWithVelocity(p_DeviceHandle, p_usNodeId, g_SpeedSwitch, &p_rlErrorCode) == 0)
+//                                {
+//                                    lResult = MMC_FAILED;
+//                                    LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
+//                                }
+//                                else
+//                                {
+//                                    LogInfo("Finding Positive Limit Switch...");
+//                                    do
+//                                    {
+//                                        if(VCS_GetQuickStopState(p_DeviceHandle, p_usNodeId, &g_IsQuickStopped, &p_rlErrorCode) == 0)
+//                                        {
+//                                            lResult = MMC_FAILED;
+//                                            LogError("VCS_GetQuickStopState", lResult, p_rlErrorCode);
+//                                        }
+//                                    }
+//                                    while (g_IsQuickStopped == 0);
+//                                    LogInfo("Found Positive Limit Switch!");
+//                                    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
+//                                       && VCS_SetObject(p_DeviceHandle, p_usNodeId, 0x3141, 0x02, &g_LowActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)== 0)
+//                                    {
+//                                        lResult = MMC_FAILED;
+//                                        LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//                                    }
+//                                    else
+//                                    {
+//                                        if(VCS_MoveWithVelocity(p_DeviceHandle, p_usNodeId, -g_SpeedIndex, &p_rlErrorCode) == 0)
+//                                        {
+//                                            lResult = MMC_FAILED;
+//                                            LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
+//                                        }
+//                                        else
+//                                        {
+//                                            LogInfo("Finding Positive Home...");
+//                                            do
+//                                            {
+//                                                if(VCS_GetQuickStopState(p_DeviceHandle, p_usNodeId, &g_IsQuickStopped, &p_rlErrorCode) == 0)
+//                                                {
+//                                                    lResult = MMC_FAILED;
+//                                                    LogError("VCS_GetQuickStopState", lResult, p_rlErrorCode);
+//                                                }
+//                                                else
+//                                                {
+//                                                    if(VCS_GetPositionIs(p_DeviceHandle, p_usNodeId, &g_CapturedPosition, &p_rlErrorCode) == 0)
+//                                                    {
+//                                                        lResult = MMC_FAILED;
+//                                                        LogError("VCS_GetPositionIs", lResult, p_rlErrorCode);
+//                                                    }
+//                                                }
+//                                            }
+//                                            while (g_IsQuickStopped == 0);
+//                                            stringstream msg;
+//
+//                                            g_PosPositiveLimit = (long)(g_CapturedPosition - g_HomeOffset);
+//                                            g_PosCenter = (long)(g_PosPositiveLimit/2);
+//
+//                                            msg << "Found Positive Limit    : " << g_PosPositiveLimit << endl;
+//                                            msg << "Found Center Position   : " << g_PosCenter;
+//                                            LogInfo(msg.str());
+//
+//                                            if(VCS_SetObject(p_DeviceHandle, p_usNodeId, 0x3141, 0x02, &g_HighActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)
+//                                               && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
+//                                            {
+//                                                lResult = MMC_FAILED;
+//                                                LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//                                            }
+//                                            else
+//                                            {
+//                                                if(VCS_ActivateProfilePositionMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
+//                                                {
+//                                                    lResult = MMC_FAILED;
+//                                                    LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
+//                                                }
+//                                                else
+//                                                {
+//                                                    if(VCS_MoveToPosition(p_DeviceHandle, p_usNodeId, g_PosCenter, 1, 1, &p_rlErrorCode) == 0)
+//                                                    {
+//                                                        lResult = MMC_FAILED;
+//                                                        LogError("VCS_MoveToPosition", lResult, p_rlErrorCode);
+//                                                    }
+//                                                    else
+//                                                    {
+//                                                        VCS_WaitForTargetReached(p_DeviceHandle, p_usNodeId, 100000, &p_rlErrorCode);
+//                                                        if(VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x01, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
+//                                                           && VCS_SetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, 0x04, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
+//                                                        {
+//                                                            lResult = MMC_FAILED;
+//                                                            LogError("VCS_SetObject", lResult, p_rlErrorCode);
+//                                                        }
+//                                                        else
+//                                                        {
+//                                                            if(VCS_SetHomingParameter(p_DeviceHandle, p_usNodeId, g_HomingAcceleration, g_SpeedSwitch, g_SpeedIndex, 0, g_CurrentThreshold,
+//                                                                                      g_HomePosition, &p_rlErrorCode) == 0)
+//                                                            {
+//                                                                lResult = MMC_FAILED;
+//                                                                LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
+//                                                            }
+//                                                            else
+//                                                            {
+//                                                                if(VCS_ActivateHomingMode(p_DeviceHandle, p_usNodeId, &p_rlErrorCode) == 0)
+//                                                                {
+//                                                                    lResult = MMC_FAILED;
+//                                                                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
+//                                                                }
+//                                                                else
+//                                                                {
+//                                                                    if(VCS_FindHome(p_DeviceHandle, p_usNodeId, HM_ACTUAL_POSITION, &p_rlErrorCode) == 0)
+//                                                                    {
+//                                                                        lResult = MMC_FAILED;
+//                                                                        LogError("VCS_FindHome", lResult, p_rlErrorCode);
+//                                                                    }
+//                                                                    else
+//                                                                    {
+//                                                                        VCS_WaitForHomingAttained(p_DeviceHandle, p_usNodeId, 15000, &p_rlErrorCode);
+//                                                                        if(VCS_GetHomingParameter(p_DeviceHandle, p_usNodeId, &g_HomingAcceleration, &g_SpeedSwitch, &g_SpeedIndex, &g_HomeOffset, &g_CurrentThreshold,
+//                                                                                                  &g_HomePosition, &p_rlErrorCode) == 0)
+//                                                                        {
+//                                                                            lResult = MMC_FAILED;
+//                                                                            LogError("VCS_GetHomingParameter", lResult, p_rlErrorCode);
+//                                                                        }
+//                                                                        else
+//                                                                        {
+//                                                                            stringstream msg;
+//                                                                            msg << "Homing Parameters, node = " << p_usNodeId << endl;
+//                                                                            msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
+//                                                                            msg << "SpeedSwitch         = " << g_SpeedSwitch << endl;
+//                                                                            msg << "SpeedIndex          = " << g_SpeedIndex << endl;
+//                                                                            msg << "HomeOffset          = " << g_HomeOffset << endl;
+//                                                                            msg << "CurrentThreshold    = " << g_interfaceName << endl;
+//                                                                            msg << "HomePosition        = " << g_HomePosition;
+//                                                                            LogInfo(msg.str());
+//                                                                            SeparatorLine();
+//                                                                        }
+//                                                                    }
+//                                                                }
+//                                                            }
+//                                                        }
+//                                                    }
+//                                                }
+//                                            }
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        if(VCS_GetObject(p_DeviceHandle, p_usNodeId, g_digitalIOIndex, g_digitalIO_4, &data, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+//                        {
+//                            lResult = MMC_FAILED;
+//                            LogError("VCS_GetObject", lResult, p_rlErrorCode);
+//                        }
+//                        else
+//                        {
+//                            if(int(data) == 28)
+//                            {
+//                                LogInfo("Homing is complete, DigitalIO 4 is set as QuickStop");
+//                                SeparatorLine();
+//                            }
+//                            else
+//                            {
+//                                LogInfo("Homing is not complete, DigitalIO 4 is NOT set as QuickStop");
+//                                SeparatorLine();
+//                            }
+//                        }
+//                    }
+//                }
+//
+//            }
+//        }
+//    }
+//
+//    return lResult;
+//}
 
 int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned int & p_rlErrorCode)
 {
@@ -737,7 +737,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingFirstId[0], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingFirstId[1], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingFirstId[2], 100000, &p_rlErrorCode);
-        msg << "Negative Limit is set, node = " << g_HomingFirstId[0] << ', ' << g_HomingFirstId[1] << ', ' << g_HomingFirstId[2];
+        msg << "Negative Limit is set, node = " << g_HomingFirstId[0] << ", " << g_HomingFirstId[1] << ", " << g_HomingFirstId[2];
         LogInfo(msg.str());
     }
 
@@ -768,7 +768,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingFirstId[i], (long)(g_SpeedSwitch*g_HomeOffset_arr[g_HomingFirstId-1]), &p_rlErrorCode) == 0)
+            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingFirstId[i], (long)(g_SpeedSwitch*g_HomeOffset_arr[g_HomingFirstId[i]-1]), &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
@@ -781,7 +781,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         stringstream msg;
         LogInfo("Finding Positive Limit Switch...");
-        for (i=0; i<3; i++)
+        for (int i=0; i<3; i++)
         {
             do
             {
@@ -813,7 +813,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingFirstId[i], -(long)(g_SpeedIndex*g_HomeOffset_arr[g_HomingFirstId-1]), &p_rlErrorCode) == 0)
+            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingFirstId[i], -(long)(g_SpeedIndex*g_HomeOffset_arr[g_HomingFirstId[i]-1]), &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
@@ -825,7 +825,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     if(lResult == MMC_SUCCESS)
     {
         stringstream msg;
-        for (i=0; i<3; i++)
+        for (int i=0; i<3; i++)
         {
             do
             {
@@ -849,14 +849,14 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
             g_PosPositiveLimit[g_HomingFirstId[i]-1] = (long)(g_CapturedPosition - g_HomeOffset_arr[g_HomingFirstId[i]-1]);
             g_PosCenter[g_HomingFirstId[i]-1] = (long)(g_PosPositiveLimit[g_HomingFirstId[i]-1]/2);
         }
-        msg << "Positive Limit is set, node = " << g_HomingFirstId[0] << ', ' << g_HomingFirstId[1] << ', ' << g_HomingFirstId[2];
+        msg << "Positive Limit is set, node = " << g_HomingFirstId[0] << ", " << g_HomingFirstId[1] << ", " << g_HomingFirstId[2];
         LogInfo(msg.str());
     }
 
     // Set Limit Switch as None
     if(lResult == MMC_SUCCESS)
     {
-        for (i=0; i<3; i++)
+        for (int i=0; i<3; i++)
         {
             if(VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIPropIndex, g_digiatlIPol, &g_HighActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)
                && VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIOIndex, g_digitalIO_1, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
@@ -876,7 +876,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     }
 
     // Move to Center Position
-    for (i=2; i>=0; i--)
+    for (int i=2; i>=0; i--)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -892,11 +892,11 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[2], 100000, &p_rlErrorCode);
         VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[1], 100000, &p_rlErrorCode);
-        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstIdp[0], 100000, &p_rlErrorCode);
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[0], 100000, &p_rlErrorCode);
     }
 
     // Set Center position as Home
-    for (i=0; i<3; i++)
+    for (int i=0; i<3; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -979,7 +979,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[1], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[2], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[3], 100000, &p_rlErrorCode);
-        msg << "Negative Limit is set, node = " << g_HomingFirstId[0] << ', ' << g_HomingFirstId[1] << ', ' << g_HomingFirstId[2] << ', ' << g_HomingFirstId[3];
+        msg << "Negative Limit is set, node = " << g_HomingFirstId[0] << ", " << g_HomingFirstId[1] << ", " << g_HomingFirstId[2] << ", " << g_HomingFirstId[3];
         LogInfo(msg.str());
     }
 
@@ -1010,7 +1010,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingSecondId[i], (long)(g_SpeedSwitch*g_HomeOffset_arr[g_HomingSecondId-1]), &p_rlErrorCode) == 0)
+            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingSecondId[i], (long)(g_SpeedSwitch*g_HomeOffset_arr[g_HomingSecondId[i]-1]), &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
@@ -1023,7 +1023,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         stringstream msg;
         LogInfo("Finding Positive Limit Switch...");
-        for (i=0; i<4; i++)
+        for (int i=0; i<4; i++)
         {
             do
             {
@@ -1055,7 +1055,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingSecondId[i], -(long)(g_SpeedIndex*g_HomeOffset_arr[g_HomingSecondId-1]), &p_rlErrorCode) == 0)
+            if(VCS_MoveWithVelocity(p_DeviceHandle, g_HomingSecondId[i], -(long)(g_SpeedIndex*g_HomeOffset_arr[g_HomingSecondId[i]-1]), &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_MoveWithVelocity", lResult, p_rlErrorCode);
@@ -1067,7 +1067,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     if(lResult == MMC_SUCCESS)
     {
         stringstream msg;
-        for (i=0; i<4; i++)
+        for (int i=0; i<4; i++)
         {
             do
             {
@@ -1091,14 +1091,14 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
             g_PosPositiveLimit[g_HomingSecondId[i]-1] = (long)(g_CapturedPosition - g_HomeOffset_arr[g_HomingSecondId[i]-1]);
             g_PosCenter[g_HomingSecondId[i]-1] = (long)(g_PosPositiveLimit[g_HomingSecondId[i]-1]/2);
         }
-        msg << "Positive Limit is set, node = " << g_HomingSecondId[0] << ', ' << g_HomingSecondId[1] << ', ' << g_HomingSecondId[2] << ', ' << g_HomingSecondId[3];
+        msg << "Positive Limit is set, node = " << g_HomingSecondId[0] << ", " << g_HomingSecondId[1] << ", " << g_HomingSecondId[2] << ", " << g_HomingSecondId[3];
         LogInfo(msg.str());
     }
 
     // Set Limit Switch as None
     if(lResult == MMC_SUCCESS)
     {
-        for (i=0; i<4; i++)
+        for (int i=0; i<4; i++)
         {
             if(VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIPropIndex, g_digiatlIPol, &g_HighActive, g_NbofBytesToWrite_2, &g_NbofBytesToWrite_2, &p_rlErrorCode)
                && VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIOIndex, g_digitalIO_1, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
@@ -1118,7 +1118,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     }
 
     // Move to Center Position
-    for (i=3; i>=0; i--)
+    for (int i=3; i>=0; i--)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -1139,7 +1139,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     }
 
     // Set Center position as Home
-    for (i=0; i<4; i++)
+    for (int i=0; i<4; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -1584,7 +1584,8 @@ int Home(unsigned int* p_pErrorCode)
     int lResult = MMC_SUCCESS;
     unsigned int lErrorCode = 0;
 //    lResult = HomingMode(g_pKeyHandle, g_usNodeId, lErrorCode);
-    lResult = BothHomingMode(g_pKeyHandle, g_usNodeId, lErrorCode);
+//    lResult = BothHomingMode(g_pKeyHandle, g_usNodeId, lErrorCode);
+    lResult = SyncHomingMode(g_pKeyHandle, g_usNodeId, lErrorCode);
 
     if(lResult != MMC_SUCCESS)
     {
