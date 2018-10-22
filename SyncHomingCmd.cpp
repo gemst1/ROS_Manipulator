@@ -50,10 +50,11 @@ int g_GearRatio[] = {160, 160, 160, 120, 100, 100, 100};
 double g_AxisVelRatio[] = {1.6, 1.6, 1.6, 1.2, 1, 1, 1};
 int g_PulseRev[] = {4096, 4096, 4096, 4096, 2048, 2048, 2048};
 int g_HomeOffset_arr[] = {72818, 72818, 72818, 54613, 22378, 22378, 22378};
+long g_SafeRange[] = {2148124, 1121393, 1856853, 1004885, 575715, 423253};
 
 // Position Control Parameters
 long g_PosDesired;
-unsigned int g_ProfileVelocity = 500;
+unsigned int g_ProfileVelocity = 1200;
 long g_PosCenter[] = {0, 0, 0, 0, 0, 0, 0};
 long g_PosPositiveLimit[] = {0, 0, 0, 0, 0, 0, 0};
 int g_CapturedPosition;
@@ -75,9 +76,13 @@ int g_IsQuickStopped;
 // Digital Input/Output Parameters
 unsigned short g_digitalIOIndex = 0x3142;
 unsigned short g_digitalIPropIndex = 0x3141;
+unsigned short g_SoftPosLimitIndex = 0x607D;
+unsigned short g_TargetPosIndex = 0x607A;
 unsigned char g_digiatlIPol = 0x02; // Digital Input Polarity
 unsigned char g_digitalIO_1 = 0x01; // Digital Input Pin for Limit
 unsigned char g_digitalIO_4 = 0x04; // Digital Input Pin for QuickStop
+unsigned char g_SoftPosMin = 0x01; // Minimum Software Position Limit
+unsigned char g_SoftPosMax = 0x02; // Maximum Software Position Limit
 unsigned int g_NbofBytesToWrite_1 = 1;
 unsigned int g_NbofBytesToWrite_2 = 2;
 unsigned int g_NbofBytesToWrite_4 = 4;
@@ -89,6 +94,9 @@ unsigned char g_None = 255;
 unsigned short g_LowActive = 0x0001;
 unsigned short g_HighActive = 0x0000;
 unsigned char data;
+int g_PosLimitMin[] = {-5000000, -5000000, -5000000, -5000000, -5000000, -5000000, -5000000};
+int g_PosLimitMax[] = {5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000};
+int g_ZeroPos = 0;
 
 const string g_programName = "HomingCmd";
 
@@ -690,27 +698,48 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     // Parameter setting for Homing mode
     for (int i=0; i<g_NbofJoint; i++)
     {
-        if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_digitalIOIndex, g_digitalIO_4, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
-           VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+        if(lResult == MMC_SUCCESS)
         {
-
-            lResult = MMC_FAILED;
-            LogError("VCS_SetObject", lResult, p_rlErrorCode);
-        }
-        else
-        {
-            if(VCS_SetHomingParameter(p_DeviceHandle, g_usNodeId_arr[i], g_HomingAcceleration, (unsigned int)(g_SpeedSwitch*g_AxisVelRatio[i]),
-                                      (unsigned int)(g_SpeedIndex*g_AxisVelRatio[i]), g_HomeOffset_arr[i], g_CurrentThreshold, g_HomePosition, &p_rlErrorCode) == 0)
+            if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_SoftPosLimitIndex, g_SoftPosMin, &g_PosLimitMin[i], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) &&
+               VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_SoftPosLimitIndex, g_SoftPosMax, &g_PosLimitMax[i], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
-                LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
+                LogError("VCS_SetObject", lResult, p_rlErrorCode);
+            }
+        }
+    }
+
+    for (int i=0; i<g_NbofJoint; i++)
+    {
+        if(lResult == MMC_SUCCESS)
+        {
+            if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_digitalIOIndex, g_digitalIO_4, &g_None, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
+               VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
+            {
+
+                lResult = MMC_FAILED;
+                LogError("VCS_SetObject", lResult, p_rlErrorCode);
             }
             else
             {
-                if(VCS_ActivateHomingMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+                if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], 0x6081, 0x00, &g_ProfileVelocity, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
+                {
+                    LogError("VCS_SetObject", lResult, p_rlErrorCode);
+                    lResult = MMC_FAILED;
+                }
+                if(VCS_SetHomingParameter(p_DeviceHandle, g_usNodeId_arr[i], g_HomingAcceleration, (unsigned int)(g_SpeedSwitch*g_AxisVelRatio[i]),
+                                          (unsigned int)(g_SpeedIndex*g_AxisVelRatio[i]), g_HomeOffset_arr[i], g_CurrentThreshold, g_HomePosition, &p_rlErrorCode) == 0)
                 {
                     lResult = MMC_FAILED;
-                    LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
+                    LogError("VCS_SetHomingParameter", lResult, p_rlErrorCode);
+                }
+                else
+                {
+                    if(VCS_ActivateHomingMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+                    {
+                        lResult = MMC_FAILED;
+                        LogError("VCS_ActivateHomingMode", lResult, p_rlErrorCode);
+                    }
                 }
             }
         }
@@ -738,8 +767,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[0], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[1], 100000, &p_rlErrorCode);
         VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[2], 100000, &p_rlErrorCode);
-        VCS_WaitForHomingAttained(p_DeviceHandle, g_HomingSecondId[3], 100000, &p_rlErrorCode);
-        msg << "Negative Limit is set, node = " << g_HomingFirstId[0] << ", " << g_HomingFirstId[1] << ", " << g_HomingFirstId[2] ;
+        msg << "Negative Limit is set, node = " << g_HomingSecondId[0] << ", " << g_HomingSecondId[1] << ", " << g_HomingSecondId[2] ;
         LogInfo(msg.str());
     }
 
@@ -754,18 +782,60 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
                 lResult = MMC_FAILED;
                 LogError("VCS_SetObject", lResult, p_rlErrorCode);
             }
+        }
+    }
+
+    // Approach to Positive Limit Switch Aggressively
+    for (int i=2; i>=0; i--)
+    {
+        if(lResult == MMC_SUCCESS)
+        {
+//            g_ProfileVelocity = 800;
+            if(VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], 0x6081, 0x00, &g_ProfileVelocity, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
+            {
+                LogError("VCS_SetObject", lResult, p_rlErrorCode);
+                lResult = MMC_FAILED;
+            }
             else
             {
-                if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, g_HomingSecondId[i], &p_rlErrorCode) == 0)
+                if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_HomingSecondId[i], &p_rlErrorCode) == 0)
                 {
                     lResult = MMC_FAILED;
-                    LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
+                    LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
                 }
             }
         }
     }
+    for (int i=2; i>=0; i--)
+    {
+        if(lResult == MMC_SUCCESS)
+        {
+            if(VCS_MoveToPosition(p_DeviceHandle, g_HomingSecondId[i], g_SafeRange[g_HomingSecondId[i]-1], 1, 1, &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_MoveToPosition", lResult, p_rlErrorCode);
+            }
+        }
+    }
+    if(lResult == MMC_SUCCESS)
+    {
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingSecondId[2], 100000, &p_rlErrorCode);
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingSecondId[1], 100000, &p_rlErrorCode);
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingSecondId[0], 100000, &p_rlErrorCode);
+    }
 
-    // Find Positive limit Switch of Joint 1, 3, 5, 7
+    // Find Positive limit Switch of Joint 1, 3, 5
+    if(lResult == MMC_SUCCESS)
+    {
+        for (int i=0; i<3; i++)
+        {
+            if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, g_HomingSecondId[i], &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
+            }
+        }
+    }
     for (int i=2; i>=0; i--)
     {
         if(lResult == MMC_SUCCESS)
@@ -810,7 +880,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
         }
     }
 
-    // Find Positive Limit of Joint 1, 3, 5, 7
+    // Find Positive Limit of Joint 1, 3, 5
     for (int i=2; i>=0; i--)
     {
         if(lResult == MMC_SUCCESS)
@@ -847,20 +917,14 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
             }
             while (g_IsQuickStopped == 0);
             stringstream msg;
-
             g_PosPositiveLimit[g_HomingSecondId[i]-1] = (long)(g_CapturedPosition - g_HomeOffset_arr[g_HomingSecondId[i]-1]);
-            if(i==0)
-            {
-                g_PosCenter[g_HomingSecondId[i]-1] = (long)(g_PosPositiveLimit[g_HomingSecondId[i]-1]/2)+60000;
-            }
-            else
-            {
-                g_PosCenter[g_HomingSecondId[i]-1] = (long)(g_PosPositiveLimit[g_HomingSecondId[i]-1]/2);
-            }
-
+            g_PosCenter[g_HomingSecondId[i]-1] = (long)(g_PosPositiveLimit[g_HomingSecondId[i]-1]/2);
+            g_PosLimitMin[g_HomingSecondId[i]-1] = -g_PosCenter[g_HomingSecondId[i]-1] - 5000;
+            g_PosLimitMax[g_HomingSecondId[i]-1] = g_PosCenter[g_HomingSecondId[i]-1] + 5000;
         }
         msg << "Positive Limit is set, node = " << g_HomingSecondId[0] << ", " << g_HomingSecondId[1] << ", " << g_HomingSecondId[2] ;
         LogInfo(msg.str());
+        SeparatorLine();
     }
 
     // Set Limit Switch as None
@@ -885,11 +949,7 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
         }
     }
 
-    if(VCS_SetObject(p_DeviceHandle, p_usNodeId, 0x6081, 0x00, &g_ProfileVelocity, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
-    {
-        LogError("VCS_SetObject", lResult, p_rlErrorCode);
-        lResult = MMC_FAILED;
-    }
+
 
     // Move to Center Position
     for (int i=2; i>=0; i--)
@@ -916,8 +976,8 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
-               && VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
+            if(VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
+                VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_SetObject", lResult, p_rlErrorCode);
@@ -956,15 +1016,23 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
                             else
                             {
                                 stringstream msg;
-                                msg << "Homing Parameters, node = " << g_HomingFirstId[i] << endl;
+                                msg << "Homing Parameters, node = " << g_HomingSecondId[i] << endl;
                                 msg << "HomingAcceleration  = " << g_HomingAcceleration << endl;
                                 msg << "SpeedSwitch         = " << l_SpeedSwitch << endl;
                                 msg << "SpeedIndex          = " << l_SpeedIndex << endl;
                                 msg << "HomeOffset          = " << l_HomeOffset << endl;
                                 msg << "CurrentThreshold    = " << g_interfaceName << endl;
+                                msg << "Range of Motion     = " << "+-" << g_PosCenter[g_HomingSecondId[i]-1]-10 << endl;
                                 msg << "HomePosition        = " << g_HomePosition;
                                 LogInfo(msg.str());
                                 SeparatorLine();
+                                if(VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_TargetPosIndex, 0x00, &g_ZeroPos, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) &&
+                                    VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_SoftPosLimitIndex, g_SoftPosMin, &g_PosLimitMin[g_HomingSecondId[i]-1], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) &&
+                                    VCS_SetObject(p_DeviceHandle, g_HomingSecondId[i], g_SoftPosLimitIndex, g_SoftPosMax, &g_PosLimitMax[g_HomingSecondId[i]-1], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
+                                {
+                                    lResult = MMC_FAILED;
+                                    LogError("VCS_SetObject", lResult, p_rlErrorCode);
+                                }
                             }
                         }
                     }
@@ -1009,18 +1077,60 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
                 lResult = MMC_FAILED;
                 LogError("VCS_SetObject", lResult, p_rlErrorCode);
             }
+        }
+    }
+
+    // Approach to Positive Limit Switch Aggressively
+    for (int i=2; i>=0; i--)
+    {
+        if(lResult == MMC_SUCCESS)
+        {
+//            g_ProfileVelocity = 800;
+            if(VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], 0x6081, 0x00, &g_ProfileVelocity, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
+            {
+                LogError("VCS_SetObject", lResult, p_rlErrorCode);
+                lResult = MMC_FAILED;
+            }
             else
             {
-                if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, g_HomingFirstId[i], &p_rlErrorCode) == 0)
+                if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_HomingFirstId[i], &p_rlErrorCode) == 0)
                 {
                     lResult = MMC_FAILED;
-                    LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
+                    LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
                 }
             }
         }
     }
+    for (int i=2; i>=0; i--)
+    {
+        if(lResult == MMC_SUCCESS)
+        {
+            if(VCS_MoveToPosition(p_DeviceHandle, g_HomingFirstId[i], g_SafeRange[g_HomingFirstId[i]-1], 1, 1, &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_MoveToPosition", lResult, p_rlErrorCode);
+            }
+        }
+    }
+    if(lResult == MMC_SUCCESS)
+    {
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[2], 100000, &p_rlErrorCode);
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[1], 100000, &p_rlErrorCode);
+        VCS_WaitForTargetReached(p_DeviceHandle, g_HomingFirstId[0], 100000, &p_rlErrorCode);
+    }
 
-    // Find Positive limit Switch of Joint 2, 4, 6
+    // Find Positive limit Switch of Joint 1, 3, 5, 7
+    if(lResult == MMC_SUCCESS)
+    {
+        for (int i=0; i<3; i++)
+        {
+            if(VCS_ActivateProfileVelocityMode(p_DeviceHandle, g_HomingFirstId[i], &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_ActivateProfileVelocityMode", lResult, p_rlErrorCode);
+            }
+        }
+    }
     for (int i=2; i>=0; i--)
     {
         if(lResult == MMC_SUCCESS)
@@ -1105,9 +1215,12 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
 
             g_PosPositiveLimit[g_HomingFirstId[i]-1] = (long)(g_CapturedPosition - g_HomeOffset_arr[g_HomingFirstId[i]-1]);
             g_PosCenter[g_HomingFirstId[i]-1] = (long)(g_PosPositiveLimit[g_HomingFirstId[i]-1]/2);
+            g_PosLimitMin[g_HomingFirstId[i]-1] = -g_PosCenter[g_HomingFirstId[i]-1] - 5000;
+            g_PosLimitMax[g_HomingFirstId[i]-1] = g_PosCenter[g_HomingFirstId[i]-1] + 5000;
         }
         msg << "Positive Limit is set, node = " << g_HomingFirstId[0] << ", " << g_HomingFirstId[1] << ", " << g_HomingFirstId[2];
         LogInfo(msg.str());
+        SeparatorLine();
     }
 
     // Set Limit Switch as None
@@ -1157,8 +1270,8 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
     {
         if(lResult == MMC_SUCCESS)
         {
-            if(VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)
-               && VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode)== 0)
+            if(VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIOIndex, g_digitalIO_1, &g_NegativeLimit, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) &&
+                VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_digitalIOIndex, g_digitalIO_4, &g_QuickStop, g_NbofBytesToWrite_1, &g_NbofBytesToWrite_1, &p_rlErrorCode) == 0)
             {
                 lResult = MMC_FAILED;
                 LogError("VCS_SetObject", lResult, p_rlErrorCode);
@@ -1203,9 +1316,17 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned short p_usNodeId, unsigned in
                                 msg << "SpeedIndex          = " << l_SpeedIndex << endl;
                                 msg << "HomeOffset          = " << l_HomeOffset << endl;
                                 msg << "CurrentThreshold    = " << g_interfaceName << endl;
+                                msg << "Range of Motion     = " << "+-" << g_PosCenter[g_HomingFirstId[i]-1]-10 << endl;
                                 msg << "HomePosition        = " << g_HomePosition;
                                 LogInfo(msg.str());
                                 SeparatorLine();
+                                if(VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_TargetPosIndex, 0x00, &g_ZeroPos, g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) &&
+                                    VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_SoftPosLimitIndex, g_SoftPosMin, &g_PosLimitMin[g_HomingFirstId[i]-1], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) &&
+                                    VCS_SetObject(p_DeviceHandle, g_HomingFirstId[i], g_SoftPosLimitIndex, g_SoftPosMax, &g_PosLimitMax[g_HomingFirstId[i]-1], g_NbofBytesToWrite_4, &g_NbofBytesToWrite_4, &p_rlErrorCode) == 0)
+                                {
+                                    lResult = MMC_FAILED;
+                                    LogError("VCS_SetObject", lResult, p_rlErrorCode);
+                                }
                             }
                         }
                     }
