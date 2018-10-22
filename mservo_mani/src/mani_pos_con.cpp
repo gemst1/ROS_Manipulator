@@ -7,6 +7,8 @@
 #include "Definitions.h"
 #include "sensor_msgs/JointState.h"
 #include <sstream>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 #ifndef MMC_SUCCESS
 #define MMC_SUCCESS 0
@@ -36,7 +38,7 @@ int g_baudrate = 0;
 const string g_programName = "ControlCmd";
 
 // Manipulator Joint Parameters
-unsigned short g_usNodeId_arr[] = {1, 2, 3, 4, 5, 6, 7};
+unsigned short g_usNodeId_arr[] = {1, 2, 3, 4, 5, 6};
 int g_NbofJoint = sizeof(g_usNodeId_arr)/ sizeof(*g_usNodeId_arr);
 int g_GearRatio[] = {160, 160, 160, 120, 100, 100, 100};
 double g_AxisVelRatio[] = {1.6, 1.6, 1.6, 1.2, 1, 1, 1};
@@ -84,6 +86,8 @@ int   CloseDevice(unsigned int* p_pErrorCode);
 int   PrepareDriver(unsigned int* p_pErrorCode);
 int   SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned int & p_rlErrorCode);
 int   SyncHomingMode(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
+int   PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
+int   PositionControl(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
 
 
 void LogError(string functionName, int p_lResult, unsigned int p_ulErrorCode)
@@ -605,9 +609,65 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
     return lResult;
 }
 
+int PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
+{
+    int lResult = MMC_SUCCESS;
+    stringstream msg;
+
+    msg << "set profile position mode";
+    LogInfo(msg.str());
+
+    for (int i=0; i<g_NbofJoint; i++)
+    {
+        if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+        {
+            lResult = MMC_FAILED;
+            LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
+        }
+    }
+    return lResult;
+}
+
+int PositionControl(HANDLE p_DeviceHandle, long PosDesired[], unsigned int & p_rlErrorCode)
+{
+    int lResult = MMC_SUCCESS;
+    int Nbof_Ids = sizeof(PosDesired)/ sizeof(*PosDesired);
+    stringstream msg;
+
+    for (int i=0; i<Nbof_Ids; i++)
+    {
+        if(VCS_MoveToPosition(p_DeviceHandle, g_usNodeId_arr[i], PosDesired[i], 1, 1, &p_rlErrorCode) == 0)
+        {
+            lResult = MMC_FAILED;
+            LogError("VCS_MoveToPosition", lResult, p_rlErrorCode);
+        }
+    }
+
+
+    return lResult;
+}
+
 void commandCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
+    int lResult = MMC_SUCCESS;
+    unsigned lErrorCode = 0;
+    stringstream ss;
 
+    long pos_desired[g_NbofJoint];
+    double pos_desired_rad[g_NbofJoint];
+
+    for (int i=0; i<g_NbofJoint; i++)
+    {
+        pos_desired_rad[i] = msg->position[i];
+        pos_desired[i] = pos_desired_rad[i]/M_PI*g_PulseRev[i]*4*g_GearRatio[i]/2.0;
+        ss << pos_desired[i] << ", ";
+    }
+    LogInfo(ss.str());
+//    if((lResult=PositionControl(g_pKeyHandle, pos_desired, lErrorCode))!=MMC_SUCCESS)
+//    {
+//        LogError("PositionControl", lResult, lErrorCode);
+//        return lResult;
+//    }
 }
 
 int main(int argc, char **argv)
@@ -621,31 +681,37 @@ int main(int argc, char **argv)
     SetDefaultParameters();
     PrintSettings();
 
-    if((lResult = OpenDevice(&ulErrorCode))!=MMC_SUCCESS)
-    {
-        LogError("OpenDevice", lResult, ulErrorCode);
-        return lResult;
-    }
+//    if((lResult = OpenDevice(&ulErrorCode))!=MMC_SUCCESS)
+//    {
+//        LogError("OpenDevice", lResult, ulErrorCode);
+//        return lResult;
+//    }
+//
+//    if((lResult = PrepareDriver(&ulErrorCode))!=MMC_SUCCESS)
+//    {
+//        LogError("PrepareDriver", lResult, ulErrorCode);
+//        return lResult;
+//    }
+//
+//    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
+//    {
+//        LogError("SyncHoming", lResult, ulErrorCode);
+//        return lResult;
+//    }
+//
+//    if((lResult = PreparePosCon(g_pKeyHandle, ulErrorCode)) !=MMC_SUCCESS)
+//    {
+//        LogError("PreparePosCon", lResult, ulErrorCode);
+//        return lResult;
+//    }
+//
+//    if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
+//    {
+//        LogError("CloseDevice", lResult, ulErrorCode);
+//        return lResult;
+//    }
 
-    if((lResult = PrepareDriver(&ulErrorCode))!=MMC_SUCCESS)
-    {
-        LogError("PrepareDemo", lResult, ulErrorCode);
-        return lResult;
-    }
-
-    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
-    {
-        LogError("SyncHoming", lResult, ulErrorCode);
-        return lResult;
-    }
-
-    if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
-    {
-        LogError("CloseDevice", lResult, ulErrorCode);
-        return lResult;
-    }
-
-    ros::Subscriber sub = n.subscribe("Commander", 1000, commandCallback);
+    ros::Subscriber sub = n.subscribe("ourarm/joint_states", 1000, commandCallback);
     ros::spin();
 
 }
