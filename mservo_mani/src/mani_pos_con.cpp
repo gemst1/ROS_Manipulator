@@ -39,7 +39,8 @@ const string g_programName = "ControlCmd";
 
 // Manipulator Joint Parameters
 unsigned short g_usNodeId_arr[] = {1, 2, 3, 4, 5, 6};
-int g_NbofJoint = sizeof(g_usNodeId_arr)/ sizeof(*g_usNodeId_arr);
+//int g_NbofJoint = sizeof(g_usNodeId_arr)/ sizeof(*g_usNodeId_arr);
+int g_NbofJoint = 6;
 int g_GearRatio[] = {160, 160, 160, 120, 100, 100, 100};
 double g_AxisVelRatio[] = {1.6, 1.6, 1.6, 1.2, 1, 1, 1};
 int g_PulseRev[] = {4096, 4096, 4096, 4096, 2048, 2048, 2048};
@@ -261,7 +262,8 @@ int PrepareDriver(unsigned int* p_pErrorCode)
 
 int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned int & p_rlErrorCode)
 {
-    int Nbof_IDs = sizeof(NodeIDs)/ sizeof(*NodeIDs);
+//    int Nbof_IDs = sizeof(NodeIDs)/ sizeof(NodeIDs[0]);
+    int Nbof_IDs = 3;
     int lResult = MMC_SUCCESS;
 
     // Find Negative limit of NodeIDs
@@ -280,15 +282,12 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
     // Waiting for Negative Limit
     if(lResult == MMC_SUCCESS)
     {
-        stringstream msg;
         LogInfo("Finding Negative Limit....");
-        msg << "Negative Limit is set, node = ";
-        for (int i=0; i<Nbof_IDs; i++)
+        for (int i=Nbof_IDs; i>0; i--)
         {
-            VCS_WaitForHomingAttained(p_DeviceHandle, NodeIDs[i], 100000, &p_rlErrorCode);
-            msg << NodeIDs[i] << ", ";
+            VCS_WaitForHomingAttained(p_DeviceHandle, NodeIDs[i-1], 100000, &p_rlErrorCode);
         }
-        LogInfo(msg.str());
+        LogInfo("Negative limit is set");
     }
 
     // Ready for finding Positive Limit
@@ -305,7 +304,7 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
     }
 
     // Approach to Positive Limit Switch Aggressively
-    for (int i=0; i<Nbof_IDs; i--)
+    for (int i=0; i<Nbof_IDs; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -316,7 +315,7 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
             }
         }
     }
-    for (int i=0; i<Nbof_IDs; i--)
+    for (int i=0; i<Nbof_IDs; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -347,7 +346,7 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
             }
         }
     }
-    for (int i=0; i<Nbof_IDs; i--)
+    for (int i=0; i<Nbof_IDs; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -391,7 +390,7 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
             }
         }
     }
-    for (int i=0; i<Nbof_IDs; i--)
+    for (int i=0; i<Nbof_IDs; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -460,7 +459,7 @@ int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned 
     }
 
     // Move to Center Position
-    for (int i=0; i<Nbof_IDs; i--)
+    for (int i=0; i<Nbof_IDs; i++)
     {
         if(lResult == MMC_SUCCESS)
         {
@@ -594,13 +593,13 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
         }
     }
 
-    if(SyncHomingProcess(p_DeviceHandle, g_HomingSecondId, p_rlErrorCode)==0)
+    if(SyncHomingProcess(p_DeviceHandle, g_HomingSecondId, p_rlErrorCode)!=0)
     {
         lResult == MMC_FAILED;
     }
     else
     {
-        if(SyncHomingProcess(p_DeviceHandle, g_HomingFirstId, p_rlErrorCode)==0)
+        if(SyncHomingProcess(p_DeviceHandle, g_HomingFirstId, p_rlErrorCode)!=0)
         {
             lResult == MMC_FAILED;
         }
@@ -619,10 +618,18 @@ int PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
 
     for (int i=0; i<g_NbofJoint; i++)
     {
-        if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+        l_ProfileVelocity = (unsigned int)(100*g_AxisVelRatio[g_usNodeId_arr[i]-1]);
+        if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], INDEX_PROFILE_VELOCITY, SUB_INDEX_PROFILE_VELOCITY, &l_ProfileVelocity, NB_OF_BYTES_TO_WRITE_4, &NB_OF_BYTES_TO_WRITE_4, &p_rlErrorCode) == 0)
         {
             lResult = MMC_FAILED;
-            LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
+        }
+        else
+        {
+            if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
+            }
         }
     }
     return lResult;
@@ -631,7 +638,8 @@ int PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
 int PositionControl(HANDLE p_DeviceHandle, long PosDesired[], unsigned int & p_rlErrorCode)
 {
     int lResult = MMC_SUCCESS;
-    int Nbof_Ids = sizeof(PosDesired)/ sizeof(*PosDesired);
+//    int Nbof_Ids = sizeof(PosDesired)/ sizeof(*PosDesired);
+    int Nbof_Ids = 6;
     stringstream msg;
 
     for (int i=0; i<Nbof_Ids; i++)
@@ -705,7 +713,7 @@ int main(int argc, char **argv)
         return lResult;
     }
 
-    ros::Subscriber sub = n.subscribe("ourarm/joint_states", 1000, commandCallback);
+    ros::Subscriber sub = n.subscribe("ourarm/joint_states", 100, commandCallback);
     ros::spin();
 
     if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
