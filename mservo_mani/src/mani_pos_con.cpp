@@ -663,11 +663,11 @@ void commandCallback(const sensor_msgs::JointState::ConstPtr& msg)
         ss << pos_desired[i] << ", ";
     }
     LogInfo(ss.str());
-//    if((lResult=PositionControl(g_pKeyHandle, pos_desired, lErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("PositionControl", lResult, lErrorCode);
+    if((lResult=PositionControl(g_pKeyHandle, pos_desired, lErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("PositionControl", lResult, lErrorCode);
 //        return lResult;
-//    }
+    }
 }
 
 int main(int argc, char **argv)
@@ -681,37 +681,38 @@ int main(int argc, char **argv)
     SetDefaultParameters();
     PrintSettings();
 
-//    if((lResult = OpenDevice(&ulErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("OpenDevice", lResult, ulErrorCode);
-//        return lResult;
-//    }
-//
-//    if((lResult = PrepareDriver(&ulErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("PrepareDriver", lResult, ulErrorCode);
-//        return lResult;
-//    }
-//
-//    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("SyncHoming", lResult, ulErrorCode);
-//        return lResult;
-//    }
-//
-//    if((lResult = PreparePosCon(g_pKeyHandle, ulErrorCode)) !=MMC_SUCCESS)
-//    {
-//        LogError("PreparePosCon", lResult, ulErrorCode);
-//        return lResult;
-//    }
-//
-//    if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("CloseDevice", lResult, ulErrorCode);
-//        return lResult;
-//    }
+    if((lResult = OpenDevice(&ulErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("OpenDevice", lResult, ulErrorCode);
+        return lResult;
+    }
+
+    if((lResult = PrepareDriver(&ulErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("PrepareDriver", lResult, ulErrorCode);
+        return lResult;
+    }
+
+    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("SyncHoming", lResult, ulErrorCode);
+        return lResult;
+    }
+
+    if((lResult = PreparePosCon(g_pKeyHandle, ulErrorCode)) !=MMC_SUCCESS)
+    {
+        LogError("PreparePosCon", lResult, ulErrorCode);
+        return lResult;
+    }
 
     ros::Subscriber sub = n.subscribe("ourarm/joint_states", 1000, commandCallback);
     ros::spin();
+
+    if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("CloseDevice", lResult, ulErrorCode);
+        return lResult;
+    }
+
 
 }
