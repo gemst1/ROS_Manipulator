@@ -464,7 +464,7 @@
     const unsigned char SUB_INDEX_DIO_CONFIGURATION_3       = 0x03;
     const unsigned char SUB_INDEX_DIO_CONFIGURATION_4       = 0x04;
     const unsigned char SUB_INDEX_SOFT_POS_MIN              = 0x01;
-    const unsigned char SUB_INDEX_SOFT_POS_MAX              = 0x01;
+    const unsigned char SUB_INDEX_SOFT_POS_MAX              = 0x02;
     const unsigned char SUB_INDEX_PROFILE_VELOCITY          = 0x00;
     const unsigned char SUB_INDEX_MODES_OF_OPERATION        = 0x00;
     const unsigned char SUB_INDEX_INTERPOLATION_VALUE       = 0x01;

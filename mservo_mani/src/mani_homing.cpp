@@ -85,7 +85,7 @@ void  SeperatorLine();
 int   OpenDevice(unsigned int* p_pErrorCode);
 int   CloseDevice(unsigned int* p_pErrorCode);
 int   PrepareDriver(unsigned int* p_pErrorCode);
-int   SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned int & p_rlErrorCode);
+int   SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], int size, unsigned int & p_rlErrorCode);
 int   SyncHomingMode(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
 int   PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
 int   PositionControl(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode);
@@ -260,10 +260,10 @@ int PrepareDriver(unsigned int* p_pErrorCode)
     return lResult;
 }
 
-int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], unsigned int & p_rlErrorCode)
+int SyncHomingProcess(HANDLE p_DeviceHandle, unsigned short NodeIDs[], int size, unsigned int & p_rlErrorCode)
 {
 //    int Nbof_IDs = sizeof(NodeIDs)/ sizeof(NodeIDs[0]);
-    int Nbof_IDs = 3;
+    int Nbof_IDs = size;
     int lResult = MMC_SUCCESS;
 
     // Find Negative limit of NodeIDs
@@ -593,13 +593,13 @@ int SyncHomingMode(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
         }
     }
 
-    if(SyncHomingProcess(p_DeviceHandle, g_HomingSecondId, p_rlErrorCode)!=0)
+    if(SyncHomingProcess(p_DeviceHandle, g_HomingSecondId, 4, p_rlErrorCode)!=0)
     {
         lResult == MMC_FAILED;
     }
     else
     {
-        if(SyncHomingProcess(p_DeviceHandle, g_HomingFirstId, p_rlErrorCode)!=0)
+        if(SyncHomingProcess(p_DeviceHandle, g_HomingFirstId, 3, p_rlErrorCode)!=0)
         {
             lResult == MMC_FAILED;
         }
