@@ -6,8 +6,6 @@
 #include "std_msgs/String.h"
 #include "Definitions.h"
 #include "sensor_msgs/JointState.h"
-#include "control_msgs/FollowJointTrajectoryActionGoal.h"
-#include "trajectory_msgs/JointTrajectoryPoint.h"
 #include <sstream>
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -42,7 +40,7 @@ const string g_programName = "ControlCmd";
 // Manipulator Joint Parameters
 unsigned short g_usNodeId_arr[] = {1, 2, 3, 4, 5, 6, 7};
 //int g_NbofJoint = sizeof(g_usNodeId_arr)/ sizeof(*g_usNodeId_arr);
-int g_NbofJoint = 6;
+int g_NbofJoint = 7;
 int g_GearRatio[] = {160, 160, 160, 120, 100, 100, 100};
 double g_AxisVelRatio[] = {1.6, 1.6, 1.6, 1.2, 1, 1, 1};
 int g_PulseRev[] = {4096, 4096, 4096, 4096, 2048, 2048, 2048};
@@ -58,11 +56,10 @@ unsigned int l_ProfileVelocity;
 long g_PosCenter[] = {0, 0, 0, 0, 0, 0, 0};
 long g_PosPositiveLimit[] = {0, 0, 0, 0, 0, 0, 0};
 int g_CapturedPosition;
-int g_Interpolation_idx = -2;
 
 // Homing Parameters
 unsigned  short g_HomingFirstId[] = {2, 4, 6};
-unsigned  short g_HomingSecondId[] = {1, 3, 5,7 };
+unsigned  short g_HomingSecondId[] = {1, 3, 5, 7};
 unsigned int g_HomingAcceleration = 1000;
 unsigned int g_SpeedSwitch = 200;
 unsigned int g_SpeedIndex = 10;
@@ -621,10 +618,18 @@ int PreparePosCon(HANDLE p_DeviceHandle, unsigned int & p_rlErrorCode)
 
     for (int i=0; i<g_NbofJoint; i++)
     {
-        if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], INDEX_MODES_OF_OPERATION, SUB_INDEX_MODES_OF_OPERATION, &CSP, NB_OF_BYTES_TO_WRITE_1, &NB_OF_BYTES_TO_WRITE_1, &p_rlErrorCode) &&
-           VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], INDEX_INTERPOLATION_TIME, SUB_INDEX_INTERPOLATION_TIME_IDX, &g_Interpolation_idx, NB_OF_BYTES_TO_WRITE_1, &NB_OF_BYTES_TO_WRITE_1, &p_rlErrorCode)== 0)
+        l_ProfileVelocity = (unsigned int)(100*g_AxisVelRatio[g_usNodeId_arr[i]-1]);
+        if(VCS_SetObject(p_DeviceHandle, g_usNodeId_arr[i], INDEX_PROFILE_VELOCITY, SUB_INDEX_PROFILE_VELOCITY, &l_ProfileVelocity, NB_OF_BYTES_TO_WRITE_4, &NB_OF_BYTES_TO_WRITE_4, &p_rlErrorCode) == 0)
         {
             lResult = MMC_FAILED;
+        }
+        else
+        {
+            if(VCS_ActivateProfilePositionMode(p_DeviceHandle, g_usNodeId_arr[i], &p_rlErrorCode) == 0)
+            {
+                lResult = MMC_FAILED;
+                LogError("VCS_ActivateProfilePositionMode", lResult, p_rlErrorCode);
+            }
         }
     }
     return lResult;
@@ -650,44 +655,27 @@ int PositionControl(HANDLE p_DeviceHandle, long PosDesired[], unsigned int & p_r
     return lResult;
 }
 
-
-void commandCallback(const control_msgs::FollowJointTrajectoryActionGoal::ConstPtr& msg)
+void commandCallback(const sensor_msgs::JointState::ConstPtr& msg)
 {
     int lResult = MMC_SUCCESS;
     unsigned lErrorCode = 0;
     stringstream ss;
-    int t_period;
-    long pos_desired;
-    std::vector<double> pos_desired_rad;
-    std::vector<trajectory_msgs::JointTrajectoryPoint>::size_type traj = msg->goal.trajectory.points.size();
 
-    for (int i=1; i<traj; ++i)
+    long pos_desired[g_NbofJoint];
+    double pos_desired_rad[g_NbofJoint];
+
+    for (int i=0; i<g_NbofJoint; i++)
     {
-        pos_desired_rad = msg->goal.trajectory.points[i].positions;
-        const ros::Duration& t = msg->goal.trajectory.points[i].time_from_start -msg->goal.trajectory.points[i-1].time_from_start;
-        t_period = 100.0*t.toSec();
-
-        for (std::vector<long>::size_type j=0; j<pos_desired_rad.size(); j++)
-        {
-            pos_desired = (long)(pos_desired_rad[j]/M_PI*g_PulseRev[j]*2*g_GearRatio[j]);
-            if(VCS_SetObject(g_pKeyHandle, g_usNodeId_arr[j], INDEX_INTERPOLATION_TIME, SUB_INDEX_INTERPOLATION_VALUE, &t_period , NB_OF_BYTES_TO_WRITE_1, &NB_OF_BYTES_TO_WRITE_1, &lErrorCode) == 0)
-            {
-                lResult = MMC_FAILED;
-                LogError("SetTimePeriod", lResult, lErrorCode);
-            }
-            else
-            {
-                if(VCS_SetObject(g_pKeyHandle, g_usNodeId_arr[j], INDEX_TARGET_POSITION, SUB_INDEX_TARGET_POSITION, &pos_desired , NB_OF_BYTES_TO_WRITE_4, &NB_OF_BYTES_TO_WRITE_4, &lErrorCode) == 0)
-                {
-                    lResult = MMC_FAILED;
-                    LogError("SetTargetPos", lResult, lErrorCode);
-                }
-            }
-            ss << pos_desired << ", ";
-        }
-        ss << t_period << endl;
+        pos_desired_rad[i] = msg->position[i];
+        pos_desired[i] = pos_desired_rad[i]/M_PI*g_PulseRev[i]*4*g_GearRatio[i]/2.0;
+        ss << pos_desired[i] << ", ";
     }
     LogInfo(ss.str());
+    if((lResult=PositionControl(g_pKeyHandle, pos_desired, lErrorCode))!=MMC_SUCCESS)
+    {
+        LogError("PositionControl", lResult, lErrorCode);
+//        return lResult;
+    }
 }
 
 int main(int argc, char **argv)
@@ -713,20 +701,20 @@ int main(int argc, char **argv)
         return lResult;
     }
 
-//    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
-//    {
-//        LogError("SyncHoming", lResult, ulErrorCode);
-//        return lResult;
-//    }
-
-    if((lResult = PreparePosCon(g_pKeyHandle, ulErrorCode)) !=MMC_SUCCESS)
+    if((lResult = SyncHomingMode(g_pKeyHandle, ulErrorCode))!=MMC_SUCCESS)
     {
-        LogError("PreparePosCon", lResult, ulErrorCode);
+        LogError("SyncHoming", lResult, ulErrorCode);
         return lResult;
     }
 
-    ros::Subscriber sub = n.subscribe("ourarm/robotic_arm_controller/follow_joint_trajectory/goal", 10, commandCallback);
-    ros::spin();
+//    if((lResult = PreparePosCon(g_pKeyHandle, ulErrorCode)) !=MMC_SUCCESS)
+//    {
+//        LogError("PreparePosCon", lResult, ulErrorCode);
+//        return lResult;
+//    }
+//
+//    ros::Subscriber sub = n.subscribe("ourarm/joint_states", 100, commandCallback);
+//    ros::spin();
 
     if((lResult = CloseDevice(&ulErrorCode))!=MMC_SUCCESS)
     {

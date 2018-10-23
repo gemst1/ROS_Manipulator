@@ -453,6 +453,9 @@
     const unsigned short INDEX_DI_PROPERTIES                = 0x3141;
     const unsigned short INDEX_SOFT_POS_LIM                 = 0x607D;
     const unsigned short INDEX_PROFILE_VELOCITY             = 0x6081;
+    const unsigned short INDEX_MODES_OF_OPERATION           = 0x6060;
+    const unsigned short INDEX_INTERPOLATION_TIME           = 0x60C2;
+    const unsigned short INDEX_TARGET_POSITION              = 0x607A;
 
 //Object subIndex
     const unsigned char SUB_INDEX_DI_POLARITY               = 0x02;
@@ -463,6 +466,18 @@
     const unsigned char SUB_INDEX_SOFT_POS_MIN              = 0x01;
     const unsigned char SUB_INDEX_SOFT_POS_MAX              = 0x01;
     const unsigned char SUB_INDEX_PROFILE_VELOCITY          = 0x00;
+    const unsigned char SUB_INDEX_MODES_OF_OPERATION        = 0x00;
+    const unsigned char SUB_INDEX_INTERPOLATION_VALUE       = 0x01;
+    const unsigned char SUB_INDEX_INTERPOLATION_TIME_IDX    = 0x02;
+    const unsigned char SUB_INDEX_TARGET_POSITION           = 0x00;
+
+//Modes of Operation
+    int PPM = 1; // Profile Position Mode
+    int PVM = 3; // Profile Velocity Mode
+    int HMM = 6; // Homing Mode
+    int CSP = 8; // Cyclic Synchronous Position Mode
+    int CSV = 9; // Cyclic Synchronous Velocity Mode
+    int CST = 10; // Cyclic Synchronous Torque Mode
 
 //Number of Bytes to Write
     unsigned int NB_OF_BYTES_TO_WRITE_1               = 1;

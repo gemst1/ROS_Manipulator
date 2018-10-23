@@ -139,6 +139,10 @@ add_executable(mani_pos_con src/mani_pos_con.cpp)
 target_link_libraries(mani_pos_con ${catkin_LIBRARIES} /opt/EposCmdLib_6.4.1.0/lib/x86_64/libEposCmd.so.6.4.1.0)
 add_dependencies(mani_pos_con mservo_mani_generate_messages_cpp)
 
+add_executable(mani_homing src/mani_homing.cpp)
+target_link_libraries(mani_homing ${catkin_LIBRARIES} /opt/EposCmdLib_6.4.1.0/lib/x86_64/libEposCmd.so.6.4.1.0)
+add_dependencies(mani_homing mservo_mani_generate_messages_cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
