@@ -30,7 +30,7 @@ using namespace std;
 // Manipulator Joint Parameters
 unsigned short g_usNodeId_arr[] = {1, 2, 3, 4, 5, 6, 7};
 //int g_NbofJoint = sizeof(g_usNodeId_arr)/ sizeof(*g_usNodeId_arr);
-int g_NbofJoint = 7;
+int g_NbofJoint = 6;
 int g_GearRatio[] = {160, 160, 160, 120, 100, 100, 100};
 double g_AxisVelRatio[] = {1.6, 1.6, 1.6, 1.2, 1, 1, 1};
 int g_PulseRev[] = {4096, 4096, 4096, 4096, 2048, 2048, 2048};
@@ -41,10 +41,10 @@ int g_PosLimitMax[] = {5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 500
 double rad2inc[7];
 double rads2rpm[7];
 int s;
-string Control_Endless = "0F80";
+string Control_Endless = "3F00";
 string Control_Enable = "0F00";
 
-unsigned short COB_ID[][4] = {{0x220, 0x320, 0x420, 0x520},
+unsigned short COB_ID[][4] = {{0x221, 0x321, 0x421, 0x521},
                             {0x222, 0x322, 0x422, 0x522},
                             {0x223, 0x323, 0x423, 0x523},
                             {0x224, 0x324, 0x424, 0x524},
@@ -246,22 +246,23 @@ void commandCallback(const control_msgs::FollowJointTrajectoryActionGoal::ConstP
             acc_desired_hex[i-1][j] = dec_to_hex(acc_desired[i-1][j], 4);
         }
     }
-
-    ros::Rate r(1000);
+    
     for (int i=1; i<traj; ++i)
     {
         stringstream ss;
         const ros::Duration& t = (msg->goal.trajectory.points[i].time_from_start -msg->goal.trajectory.points[i-1].time_from_start);
-
+        ros::Rate r(1./t.toSec());
+                
         ros::Time begin = ros::Time::now();
 //        r.reset();
-        for (int j = 0; j < 7; j++) {
+        for (int j = 0; j < g_NbofJoint; j++) {
             // Send Profile Velocity & Acceleration
             frame.can_id = COB_ID[j][3];
             frame.can_dlc = 8;
             data = stringappend(vel_desired_hex[i - 1][j], acc_desired_hex[i - 1][j]);
             hexstring2data((char *) data.c_str(), frame.data, 8);
             write(s, &frame, sizeof(struct can_frame));
+            ros::Duration(0.0001).sleep();
 
             // Send Desired Position
             frame.can_id = COB_ID[j][2];
@@ -269,11 +270,14 @@ void commandCallback(const control_msgs::FollowJointTrajectoryActionGoal::ConstP
             data = stringappend(Control_Endless, pos_desired_hex[i - 1][j]);
             hexstring2data((char *) data.c_str(), frame.data, 8);
             write(s, &frame, sizeof(struct can_frame));
+            ros::Duration(0.0001).sleep();
         }
+        
         ros::Time finish = ros::Time::now();
 //        r.sleep();
         ss << (finish-begin);
         LogInfo(ss.str());
+        r.sleep();
     }
 }
 
@@ -303,7 +307,7 @@ int main (int argc, char **argv){
 
     printf("%s at index %d\n", ifname, ifr.ifr_ifindex);
 
-    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
+//    setsockopt(s, SOL_CAN_RAW, CAN_RAW_FILTER, NULL, 0);
 
     if(bind(s, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
         perror("Error in socket bind");
@@ -319,6 +323,7 @@ int main (int argc, char **argv){
     frame.data[1] = 0x00;
     write(s, &frame, sizeof(struct can_frame));
     LogInfo("Reset Communication");
+    ros::Duration(2).sleep();
 
     // Start Remote Node
     frame.can_id  = 0x000;
@@ -327,6 +332,7 @@ int main (int argc, char **argv){
     frame.data[1] = 0x00;
     write(s, &frame, sizeof(struct can_frame));
     LogInfo("Start Remote Node");
+    ros::Duration(1).sleep();
 
     for (int i=0; i<g_NbofJoint; i++)
     {
@@ -337,6 +343,7 @@ int main (int argc, char **argv){
         frame.data[1] = 0x00;
         frame.data[2] = 0x01;
         write(s, &frame, sizeof(struct can_frame));
+        ros::Duration(0.5).sleep();
 
         // Shutdown Controlword
         frame.can_id  = COB_ID[i][0];
@@ -344,6 +351,7 @@ int main (int argc, char **argv){
         frame.data[0] = 0x06;
         frame.data[1] = 0x00;
         write(s, &frame, sizeof(struct can_frame));
+        ros::Duration(0.5).sleep();
 
         // Enable Controlword
         frame.can_id  = COB_ID[i][0];
@@ -351,10 +359,20 @@ int main (int argc, char **argv){
         frame.data[0] = 0x0F;
         frame.data[1] = 0x00;
         write(s, &frame, sizeof(struct can_frame));
+        ros::Duration(0.5).sleep();
     }
 
     ros::Subscriber sub = n.subscribe("ourarm/robotic_arm_controller/follow_joint_trajectory/goal", 1, commandCallback);
     ros::spin();
+
+    // Reset Communication
+    frame.can_id  = 0x000;
+    frame.can_dlc = 2;
+    frame.data[0] = 0x82;
+    frame.data[1] = 0x00;
+    write(s, &frame, sizeof(struct can_frame));
+    LogInfo("Reset Communication");
+    ros::Duration(2).sleep();
 
     // Stop Remote Node
     frame.can_id  = 0x000;
