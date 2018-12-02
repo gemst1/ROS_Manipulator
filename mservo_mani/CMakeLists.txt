@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    JointState.msg
+   gripper_dis.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -134,6 +135,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/mservo_mani_node.cpp)
+
+add_executable(mani_pos_con_pdo src/mani_pos_con_pdo.cpp)
+target_link_libraries(mani_pos_con_pdo ${catkin_LIBRARIES})
+add_dependencies(mani_pos_con_pdo mservo_mani_generate_messages_cpp /home/jeon/can-utils/lib.o)
 
 add_executable(mani_pos_con src/mani_pos_con.cpp)
 target_link_libraries(mani_pos_con ${catkin_LIBRARIES} /opt/EposCmdLib_6.4.1.0/lib/x86_64/libEposCmd.so.6.4.1.0)
