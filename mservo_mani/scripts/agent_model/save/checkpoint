@@ -1,0 +1,5 @@
+model_checkpoint_path: "/home/mservo/test_ws/src/mservo_mani/scripts/agent_model/save/epoch-1499"
+all_model_checkpoint_paths: "/home/mservo/test_ws/src/mservo_mani/scripts/agent_model/save/epoch-1496"
+all_model_checkpoint_paths: "/home/mservo/test_ws/src/mservo_mani/scripts/agent_model/save/epoch-1497"
+all_model_checkpoint_paths: "/home/mservo/test_ws/src/mservo_mani/scripts/agent_model/save/epoch-1498"
+all_model_checkpoint_paths: "/home/mservo/test_ws/src/mservo_mani/scripts/agent_model/save/epoch-1499"
