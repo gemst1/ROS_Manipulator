@@ -52,6 +52,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    JointState.msg
    gripper_dis.msg
+   trajectory.msg
  )
 
 ## Generate services in the 'srv' folder
