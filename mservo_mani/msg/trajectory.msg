@@ -1,1 +1,1 @@
-float64[18] traj
+float64[] traj
