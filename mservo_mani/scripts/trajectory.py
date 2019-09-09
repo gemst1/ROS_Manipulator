@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 
-dir = '/Volumes/MSERVO_Cloud/2.연구실자료/1.개인자료/노우석/data2.txt'
+dir = 'data2.txt'
 
 file = open(dir, 'r', encoding='utf-8')
 reader = csv.reader(file)
