@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="ethercat_test" name="simpletest" type="simpletest" launch-prefix="ethercat_grant"/>
+</launch>
